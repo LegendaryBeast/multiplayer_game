@@ -26,6 +26,39 @@ function getRandomColor() {
       c.fill();
     }
   }
+
+  const friction = 0.98;
+
+  class Particle {
+    constructor(x , y , radius , color , velocity){
+        this.x=x
+        this.y=y
+        this.radius=radius
+        this.color=color
+        this.velocity=velocity
+        this.alpha=1
+    }
+
+    draw() {
+        c.save()
+        c.globalAlpha = this.alpha
+        c.beginPath()
+        c.arc(this.x,this.y, this.radius, 0, Math.PI * 2, false)
+        c.fillStyle= this.color
+        c.fill()
+        c.restore()
+    }
+
+    update(){
+    	  this.draw()
+        this.velocity.x*=friction
+        this.velocity.y*=friction
+        this.x=this.x+this.velocity.x
+        this.y=this.y+this.velocity.y
+        this.alpha-=0.01
+    }
+}
+
   
   class Projectile {
     constructor(x, y, radius, velocity) {
@@ -75,6 +108,7 @@ function getRandomColor() {
   
   const projectiles = [];
   const enemies = [];
+  const particles = []
   
   function spwanEnemies() {
     setInterval(() => {
@@ -107,6 +141,14 @@ function getRandomColor() {
     c.fillRect(0, 0, canvas.width, canvas.height);
     p.draw();
   
+    particles.forEach((particle,index)=>{
+      if(particle.alpha<=0){
+        particles.splice(index,1)
+      }
+      else
+        particle.update()
+    })
+
     projectiles.forEach((projectile,index) => {
       projectile.update();
 
@@ -131,9 +173,20 @@ function getRandomColor() {
 
       projectiles.forEach((projectile,guliIndex)=>{
         const distance = Math.hypot(projectile.x-enemy.x,projectile.y-enemy.y)
+
+        //when guli hit enemy
         if(distance - enemy.radius- projectile.radius <1){
+
+          for(let i=0;i<enemy.radius*2;i++){
+            particles.push(new Particle(projectile.x , projectile.y,Math.random()*2,enemy.color,{
+              x:(Math.random()-0.5)*(Math.random()*7),
+              y:(Math.random()-0.5)*(Math.random()*7)
+            }))
+          }
           if(enemy.radius -10 > 10){
-            enemy.radius-=10
+            gsap.to(enemy,{
+              radius : enemy.radius - 10
+            })
             setTimeout(()=>{
               projectiles.splice(guliIndex,1)
             },0)
@@ -160,7 +213,7 @@ function getRandomColor() {
       y: Math.sin(angle) * 5,
     };
     projectiles.push(
-      new Projectile(canvas.width / 2, canvas.height / 2, 6 , velocity)
+      new Projectile(canvas.width / 2, canvas.height / 2, 5 , velocity)
     );
   });
   
